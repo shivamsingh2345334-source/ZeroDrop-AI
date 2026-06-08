@@ -1,20 +1,20 @@
 # 🚀 AI Gateway: High-Concurrency, Zero-Drop Inference Engine
 
-A production-grade, highly concurrent AI inference platform engineered to process massive-scale workloads without dropping requests, blocking application threads, or overwhelming upstream LLM providers.
+A production-grade AI inference platform engineered to process massive-scale workloads without dropping requests, blocking application threads, or overwhelming upstream LLM providers.
 
-Built with **FastAPI, Redis, Apache Kafka, Pinecone, and Groq**, the system decouples request ingestion from AI execution through an event-driven architecture, enabling reliable, fault-tolerant, and horizontally scalable AI deployments.
+Built with **FastAPI, Redis, Apache Kafka, Pinecone, and Groq**, the platform decouples request ingestion from AI execution through an event-driven architecture, enabling reliable, fault-tolerant, and horizontally scalable AI deployments.
 
-The gateway guarantees **100% request retention**, even during traffic spikes, by leveraging Kafka-backed buffering, Redis-powered caching, asynchronous workers, and real-time WebSocket delivery.
+By leveraging Kafka-backed buffering, Redis-powered caching, asynchronous workers, and real-time WebSocket delivery, the gateway achieves **100% request retention** even during extreme traffic spikes.
 
 ---
 
-# ✨ Core Architecture & Engineering Highlights
+## ✨ Core Architecture & Engineering Highlights
 
-## Atomic Sliding-Window Rate Limiting
+### Atomic Sliding-Window Rate Limiting
 
 Rate limiting is implemented entirely inside Redis using custom Lua scripts (`ZREMRANGEBYSCORE`, `ZCARD`) rather than application-level locks.
 
-### Benefits
+#### Benefits
 
 * 100% atomic execution
 * No race conditions under concurrent load
@@ -23,9 +23,9 @@ Rate limiting is implemented entirely inside Redis using custom Lua scripts (`ZR
 
 ---
 
-## Zero-Drop Backpressure Handling
+### Zero-Drop Backpressure Handling
 
-When traffic exceeds processing capacity, requests are never rejected or lost.
+When incoming traffic exceeds processing capacity, requests are never dropped.
 
 Instead:
 
@@ -35,23 +35,23 @@ Instead:
 4. Background workers process requests asynchronously
 5. Results are delivered through WebSockets
 
-This ensures uninterrupted service even when downstream AI providers become slow or temporarily rate-limited.
+This design keeps the system responsive even when downstream AI providers become slow or temporarily rate-limited.
 
 ---
 
-## Fully Asynchronous Processing Pipeline
+### Fully Asynchronous Processing Pipeline
 
-### Vector Retrieval
+#### Vector Retrieval
 
-The Pinecone Python SDK is synchronous by nature.
+The Pinecone SDK is synchronous by design.
 
 To prevent event-loop blocking, vector searches are executed through ThreadPoolExecutors, allowing FastAPI and worker services to remain fully asynchronous.
 
-### LLM Inference
+#### LLM Inference
 
 Groq API calls are executed using the native asynchronous client.
 
-Outbound requests are protected using:
+Concurrency is controlled through:
 
 ```python
 asyncio.Semaphore(MAX_CONCURRENT)
@@ -61,13 +61,13 @@ This prevents API quota exhaustion while maintaining predictable throughput and 
 
 ---
 
-## Real-Time WebSocket Delivery
+### Real-Time WebSocket Delivery
 
-Background workers publish completed results through Redis Pub/Sub channels.
+Background workers publish completed results through Redis Pub/Sub.
 
 The FastAPI connection manager maintains active WebSocket mappings and immediately streams completed responses back to connected clients.
 
-### Benefits
+#### Benefits
 
 * Real-time response delivery
 * No polling overhead
@@ -76,7 +76,7 @@ The FastAPI connection manager maintains active WebSocket mappings and immediate
 
 ---
 
-## Write-Through Semantic Caching
+### Write-Through Semantic Caching
 
 Every prompt is hashed using SHA-256 and stored in Redis.
 
@@ -94,7 +94,7 @@ The Kafka pipeline and LLM inference stages are completely bypassed, resulting i
 
 ---
 
-# 📊 Performance Benchmarks
+## 📊 Performance Benchmarks
 
 The system was stress-tested using Locust under highly concurrent traffic conditions.
 
@@ -108,11 +108,21 @@ Kafka buffering and Redis caching enabled the platform to absorb traffic spikes 
 | Failure Rate               | 0.00%                           |
 | Dropped Requests           | 0                               |
 | Request Retention          | 100%                            |
-| Bottleneck Mitigation      | Kafka buffering + Redis caching |
+| Bottleneck Mitigation      | Kafka Buffering + Redis Caching |
+
+### Load Test Evidence
+
+#### Statistics Overview
+
+![Locust Statistics](assets/locust-stats.png)
+
+#### Throughput & Response Time Analysis
+
+![Locust Charts](assets/locust-charts.png)
 
 ---
 
-# 🧠 System Event Flow
+## 🧠 System Architecture
 
 ```text
 Client Request
@@ -173,13 +183,14 @@ POST /infer
 
 ---
 
-# 🛠️ Technology Stack
+## 🛠️ Technology Stack
 
 ### API Layer
 
 * FastAPI
 * WebSockets
 * AsyncIO
+* Uvicorn
 
 ### Messaging & Streaming
 
@@ -205,50 +216,63 @@ POST /infer
 
 * Locust
 
-### Architecture Patterns
+### Infrastructure
 
-* Event-Driven Architecture
-* Backpressure Handling
-* Distributed Rate Limiting
-* Micro-Batching
-* Async Worker Pools
-* Write-Through Caching
+* Docker
+* Docker Compose
 
 ---
 
-# ⚙️ Setup & Local Deployment
+## ⚙️ Setup & Local Deployment (GitHub Codespaces Optimized)
 
-## Prerequisites
+### Prerequisites
 
 * Python 3.11+
 * Docker & Docker Compose
 * Groq API Key
 * Pinecone API Key
 
----
+> **Note:** This project uses the official `pinecone` package. If `pinecone-client` is installed, remove it first:
 
-## 1. Environment Configuration
-
-Create a `.env` file in the project root:
-
-```env
-REDIS_URL=redis://127.0.0.1:6379/0
-KAFKA_BROKERS=127.0.0.1:9092
-KAFKA_TOPIC=ai_requests
-RATE_LIMIT_RPS=5000
-
-MAX_CONCURRENT=50
-
-PINECONE_API_KEY=your_pinecone_key
-PINECONE_INDEX=ai-gateway-index
-
-GROQ_API_KEY=your_groq_key
-GROQ_MODEL=llama3-8b-8192
+```bash
+pip uninstall -y pinecone-client
 ```
 
 ---
 
-## 2. Start Infrastructure
+### 1. Install Dependencies
+
+```bash
+pip install fastapi uvicorn redis aiokafka pinecone groq locust uvloop
+```
+
+---
+
+### 2. Environment Configuration
+
+Create a `.env` file:
+
+```env
+PINECONE_API_KEY=your_pinecone_api_key
+GROQ_API_KEY=your_groq_api_key
+
+REDIS_URL=redis://127.0.0.1:6379/0
+KAFKA_BROKERS=127.0.0.1:9092
+KAFKA_TOPIC=ai_requests
+
+RATE_LIMIT_RPS=5000
+MAX_CONCURRENT=50
+```
+
+Load the variables:
+
+```bash
+set -a && source .env && set +a
+```
+
+---
+
+### 3. Start Infrastructure
 
 ```bash
 docker compose up -d
@@ -257,29 +281,68 @@ docker compose ps
 
 ---
 
-## 3. Launch the Background Worker
+### 4. Launch Background Worker
 
 ```bash
+set -a && source .env && set +a
 python agent_alpha.py
 ```
 
----
+Wait until:
 
-## 4. Start the API Gateway
-
-```bash
-uvicorn main:app --host 127.0.0.1 --port 8000
+```text
+agent_alpha.ready
+kafka.consumer.ready
 ```
 
 ---
 
-# 📚 API Reference
+### 5. Start API Gateway
 
-## POST /infer
+```bash
+set -a && source .env && set +a
+
+CORES=$(nproc)
+
+uvicorn main:app \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --workers $((CORES * 2)) \
+  --loop uvloop \
+  --log-level warning \
+  --backlog 4096
+```
+
+---
+
+### 6. Launch Locust
+
+```bash
+set -a && source .env && set +a
+
+locust \
+  --host http://127.0.0.1:8000 \
+  --web-host 127.0.0.1 \
+  --web-port 8089
+```
+
+Open the Locust UI from the Codespaces Ports tab.
+
+Recommended settings:
+
+* Users: **100000**
+* Spawn Rate: **1000**
+* Host: **http://127.0.0.1:8000**
+
+---
+
+## 📚 API Reference
+
+### POST /infer
 
 Submit a prompt for asynchronous AI processing.
 
-### Request
+#### Request
 
 ```json
 {
@@ -290,7 +353,7 @@ Submit a prompt for asynchronous AI processing.
 }
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -302,7 +365,7 @@ Submit a prompt for asynchronous AI processing.
 
 ---
 
-## WebSocket Endpoint
+### WebSocket Endpoint
 
 ```text
 /ws/{task_id}
@@ -310,23 +373,23 @@ Submit a prompt for asynchronous AI processing.
 
 Clients subscribe to receive the final inference result.
 
-The connection automatically closes after successful delivery.
+The connection automatically closes once the response is delivered.
 
 ---
 
-## Health Probes
+### Health Endpoints
 
-### GET /healthz
+#### GET /healthz
 
-Returns application health status and active WebSocket counts.
+Returns application health status and active WebSocket count.
 
-### GET /readyz
+#### GET /readyz
 
 Performs dependency validation and infrastructure readiness checks.
 
 ---
 
-# 🛡️ Reliability Guarantees
+## 🛡️ Reliability Guarantees
 
 ### Zero Connection Leaks
 
@@ -346,7 +409,7 @@ Failures in individual requests never impact the consumer loop, worker pool, or 
 
 ---
 
-# 💡 Why This Matters
+## 💡 Why This Matters
 
 Most AI applications fail when thousands of users simultaneously request inference.
 
@@ -360,4 +423,4 @@ AI Execution
 
 FastAPI focuses solely on accepting traffic, Kafka absorbs load spikes, and background workers independently process AI workloads.
 
-The result is a resilient, scalable, and production-ready AI platform capable of serving high-volume enterprise workloads without blocking, crashing, or dropping requests.
+The result is a resilient, scalable, and production-ready AI platform capable of serving high-volume enterprise AI workloads without blocking, crashing, or dropping requests.

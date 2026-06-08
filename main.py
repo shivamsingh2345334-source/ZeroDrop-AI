@@ -150,7 +150,7 @@ async def lifespan(app: FastAPI):
     await kafka_producer.start()
     log.info("kafka.producer.ready")
 
-    yield  # ←─ बाबू, ई लाइन बहुत ज़रूरी है! यहीं से एप्लीकेशन स्टार्ट होती है!
+    yield  
 
     # ── Graceful shutdown ──────────────────────────────────────────────────
     log.info("shutdown.starting")

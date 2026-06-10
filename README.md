@@ -115,6 +115,7 @@ Kafka buffering and Redis caching enabled the platform to absorb traffic spikes 
 #### Statistics Overview
 
 [locust](assets/Screenshot_7-6-2026_163616_humble-fishstick-v67r4jr79w6529rj-8089.app.github.dev.jpeg)
+[locust](assets/Screenshot_7-6-2026_163624_humble-fishstick-v67r4jr79w6529rj-8089.app.github.dev.jpeg)
 
 
 

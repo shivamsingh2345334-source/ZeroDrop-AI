@@ -76,7 +76,7 @@ The FastAPI connection manager maintains active WebSocket mappings and immediate
 
 ---
 
-### Write-Through Semantic Caching
+### Write-Through  Caching
 
 Every prompt is hashed using SHA-256 and stored in Redis.
 
@@ -114,11 +114,9 @@ Kafka buffering and Redis caching enabled the platform to absorb traffic spikes 
 
 #### Statistics Overview
 
-![Locust Statistics](assets/locust-stats.png)
+(assets/Screenshot_7-6-2026_163616_humble-fishstick-v67r4jr79w6529rj-8089.app.github.dev.jpeg)
+(
 
-#### Throughput & Response Time Analysis
-
-![Locust Charts](assets/locust-charts.png)
 
 ---
 

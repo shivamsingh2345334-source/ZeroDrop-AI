@@ -162,38 +162,7 @@ async def lifespan(app: FastAPI):
         log.info("redis.closed")
     log.info("shutdown.complete")
 
-    # ── Kafka Producer ─────────────────────────────────────────────────────
-    # ── Kafka Producer ─────────────────────────────────────────────────────
-    log.info("kafka.producer.starting", brokers=KAFKA_BROKERS)
-    kafka_producer = AIOKafkaProducer(
-        bootstrap_servers=KAFKA_BROKERS,
-        # Micro-batching: hold up to 5 ms to accumulate messages
-        linger_ms=5,
-        # Compress entire batch with gzip
-        compression_type="gzip",
-        # Serialise with orjson (fastest pure-Python JSON)
-        value_serializer=lambda v: orjson.dumps(v),
-        # Reliability
-        acks="all",
-        retry_backoff_ms=200,
-        # Throughput buffers
-        max_batch_size=65536,        # 64 KB
-        request_timeout_ms=30000,
-        # Idempotent delivery (no duplicates on retry)
-        enable_idempotence=True,
-    )
-    await kafka_producer.start()
-    log.info("kafka.producer.ready")
-
-    # ── Graceful shutdown ──────────────────────────────────────────────────
-    log.info("shutdown.starting")
-    if kafka_producer:
-        await kafka_producer.stop()
-        log.info("kafka.producer.stopped")
-    if redis_client:
-        await redis_client.aclose()
-        log.info("redis.closed")
-    log.info("shutdown.complete")
+ 
 
 
 # ──────────────────────────────────────────────────────────────────────────────
